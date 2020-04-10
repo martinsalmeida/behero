@@ -1,88 +1,108 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { FiPower, FiTrash2 } from 'react-icons/fi';
+import React, { useEffect, useState } from 'react';
+import { Link, useHistory } from 'react-router-dom';
+import { FiPower, FiTrash2, FiEdit } from 'react-icons/fi';
+
+import api from '../../services/api';
 
 import logoImg from '../../assets/logo.svg';
 
 import './styles.css';
 
 export default function Profile() {
-  return (
-    <div className="profile-container">
-      <header>
-        <img src={logoImg} alt="Be the hero" />
-        <span>Bem Vinda, APAD</span>
+  const [incidents, setIncidents] = useState([]);
+  const ongName = localStorage.getItem('ongName');
+  const ongId = localStorage.getItem('ongId');
 
-        <Link className="button" to="/incidents/new">
+  const history = useHistory();
+
+  useEffect(() => {
+    api
+      .get('profile', {
+        headers: {
+          Authorization: ongId,
+        },
+      })
+      .then((response) => {
+        setIncidents(response.data);
+      });
+  }, [ongId]);
+
+  async function handleDeleteIncident(id) {
+    try {
+      alert('Tem certeza que deseja deletar esse caso?');
+      await api.delete(`incidents/${id}`, {
+        headers: {
+          Authorization: ongId,
+        },
+      });
+
+      setIncidents(incidents.filter((incident) => incident.id !== id));
+    } catch (error) {
+      alert('Erro ao deletar caso, tente novamente.');
+    }
+  }
+
+  function handleLogout() {
+    localStorage.clear();
+    history.push('/');
+  }
+
+  function handleEditIncident(id) {
+    history.push(`incidents/edit/${id}`);
+  }
+
+  return (
+    <div className='profile-container'>
+      <header>
+        <img src={logoImg} alt='Be the hero' />
+        <span>Bem Vinda, {ongName}</span>
+
+        <Link className='button' to='/incidents/new'>
           Cadastrar novo caso
         </Link>
-        <button type="button">
-          <FiPower size={18} color="#e02141" />
+        <button onClick={handleLogout} type='button'>
+          <FiPower size={18} color='#e02141' />
         </button>
       </header>
 
       <h1>Casos cadastrados</h1>
 
       <ul>
-        <li>
-          <strong>CASO:</strong>
-          <p>Caso Teste</p>
+        {incidents.map((incident) => (
+          <li key={incident.id}>
+            <strong>CASO:</strong>
+            <p>{incident.title}</p>
 
-          <strong>DESCRIÇÃO:</strong>
-          <p>Descrição Teste</p>
+            <strong>DESCRIÇÃO:</strong>
+            <p>{incident.description}</p>
 
-          <strong>VALOR:</strong>
-          <p>R$ 12.00</p>
+            <strong>VALOR:</strong>
+            <p>
+              {incident.value !== 0
+                ? Intl.NumberFormat('pt-br', {
+                    style: 'currency',
+                    currency: 'BRL',
+                  }).format(incident.value)
+                : 'GRATUITO'}
+            </p>
 
-          <button type="button">
-            <FiTrash2 size={20} color="#a8a8b3" />
-          </button>
-        </li>
+            <div className='profile-button'>
+              <button
+                onClick={() => handleDeleteIncident(incident.id)}
+                type='button'
+              >
+                <FiTrash2 size={20} color='#a8a8b3' />
+              </button>
 
-        <li>
-          <strong>CASO:</strong>
-          <p>Caso Teste</p>
-
-          <strong>DESCRIÇÃO:</strong>
-          <p>Descrição Teste</p>
-
-          <strong>VALOR:</strong>
-          <p>R$ 12.00</p>
-
-          <button type="button">
-            <FiTrash2 size={20} color="#a8a8b3" />
-          </button>
-        </li>
-
-        <li>
-          <strong>CASO:</strong>
-          <p>Caso Teste</p>
-
-          <strong>DESCRIÇÃO:</strong>
-          <p>Descrição Teste</p>
-
-          <strong>VALOR:</strong>
-          <p>R$ 12.00</p>
-
-          <button type="button">
-            <FiTrash2 size={20} color="#a8a8b3" />
-          </button>
-        </li>
-
-        <li>
-          <strong>CASO:</strong>
-          <p>Caso Teste</p>
-
-          <strong>DESCRIÇÃO:</strong>
-          <p>Descrição Teste</p>
-
-          <strong>VALOR:</strong>
-          <p>R$ 12.00</p>
-
-          <button type="button">
-            <FiTrash2 size={20} color="#a8a8b3" />
-          </button>
-        </li>
+              <button
+                onClick={() => handleEditIncident(incident.id)}
+                type='button'
+              >
+                <FiEdit size={20} color='#a8a8b3' />
+              </button>
+            </div>
+          </li>
+        ))}
       </ul>
     </div>
   );

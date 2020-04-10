@@ -1,5 +1,4 @@
-import React, { useState } from 'react';
-import logoImg from '../../assets/logo.svg';
+import React, { useState, useEffect } from 'react';
 import { Link, useHistory } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 
@@ -7,10 +6,20 @@ import api from '../../services/api';
 
 import './styles.css';
 
-export default function NewIncident() {
+export default function NewIncident({ match }) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [value, setValue] = useState('');
+
+  const id = match.params.id;
+
+  useEffect(() => {
+    api.get(`incidents/${id}`).then((response) => {
+      setTitle(response.data.title);
+      setDescription(response.data.description);
+      setValue(response.data.value);
+    });
+  }, [id]);
 
   const history = useHistory();
 
@@ -21,7 +30,7 @@ export default function NewIncident() {
     const data = { title, description, value };
 
     try {
-      await api.post('incidents', data, {
+      await api.put(`incidents/${id}`, data, {
         headers: {
           Authorization: ongId,
         },
@@ -29,25 +38,14 @@ export default function NewIncident() {
 
       history.push('/profile');
     } catch (err) {
-      alert('Erro ao cadastrar, tente novamente');
+      alert('Erro ao tentar atualizar, tente novamente');
     }
   }
 
   return (
-    <div className='new-incident-container'>
+    <div className='edit-incident-container'>
       <div className='content'>
-        <section>
-          <img src={logoImg} alt='Be the hero' />
-          <h1>Cadastrar Novo Caso</h1>
-          <p>
-            Descreva o caso detalhadamente para encontrar um herói para resolver
-            isso.
-          </p>
-          <Link className='back-link' to='/profile'>
-            <FiArrowLeft size={16} color='#e02041' />
-            Voltar para home
-          </Link>
-        </section>
+        <h1>Editar Caso</h1>
 
         <form onSubmit={handleSubmit}>
           <input
@@ -67,9 +65,13 @@ export default function NewIncident() {
           />
 
           <button type='submit' className='button'>
-            Cadastrar
+            Salvar
           </button>
         </form>
+        <Link className='back-link' to='/profile'>
+          <FiArrowLeft size={16} color='#e02041' />
+          Voltar para home
+        </Link>
       </div>
     </div>
   );

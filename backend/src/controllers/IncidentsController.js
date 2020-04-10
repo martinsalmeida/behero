@@ -16,7 +16,7 @@ module.exports = {
         'ongs.email',
         'ongs.whatsapp',
         'ongs.city',
-        'ongs.uf'
+        'ongs.uf',
       ]);
 
     res.header('X-Total-Count', count['count(*)']);
@@ -32,11 +32,12 @@ module.exports = {
       title,
       description,
       value,
-      ongs_id
+      ongs_id,
     });
 
     return res.json({ id });
   },
+
   async delete(req, res) {
     const { id } = req.params;
     const ongs_id = req.headers.authorization;
@@ -50,10 +51,39 @@ module.exports = {
       return res.status(401).json({ error: 'Operation not permitted' });
     }
 
-    await connection('incidents')
-      .where('id', id)
-      .delete();
+    await connection('incidents').where('id', id).delete();
 
     return res.status(204).send();
-  }
+  },
+
+  async update(req, res) {
+    const { id } = req.params;
+    const ongs_id = req.headers.authorization;
+    const { title, description, value } = req.body;
+
+    const incident = await connection('incidents')
+      .where('id', id)
+      .select('ongs_id');
+
+    if (incident[0].ongs_id != ongs_id) {
+      return res.status(401).json({ error: 'Operation not permitted' });
+    }
+
+    await connection('incidents')
+      .where('id', id)
+      .update({ title, description, value });
+
+    return res.status(204).send();
+  },
+
+  async show(req, res) {
+    const { id } = req.params;
+
+    const oneIncident = await connection('incidents')
+      .where('id', id)
+      .select('*')
+      .first();
+
+    res.json(oneIncident);
+  },
 };
